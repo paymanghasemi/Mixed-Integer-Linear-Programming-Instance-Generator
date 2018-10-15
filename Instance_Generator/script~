@@ -1,0 +1,24 @@
+#! /bin/sh
+make clean
+make
+for p in 2 
+do
+for r in 4000 8000
+do
+for j in 1 2 3 4
+do
+c=`expr $j \\* $r / 4 + $r`
+for i in 1 2 3 4 5
+do
+./Instance_Generator_For_ISA $p $r $c 0.25 0.25 $i
+cp Instance.lp instances/"$p"_"$r"_"$c"_"$i".lp
+#cp AMPL.mod AMPLinstances/"$p"_"$r"_"$c"_"$i".mod
+rm Instance.lp
+rm AMPL.mod 
+done
+done
+done
+done
+
+#gprof -b multi_rect > test.txt
+

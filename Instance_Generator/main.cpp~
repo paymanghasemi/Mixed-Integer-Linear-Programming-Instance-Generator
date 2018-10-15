@@ -1,0 +1,316 @@
+/* 
+ * File:   main.cpp
+ * Author: c3156840
+ *
+ * Created on 23 July 2013, 11:28 AM
+ */
+
+#include <cstdlib>
+#include <stdio.h>
+#include <iostream>
+#include <iomanip>
+#include<fstream>
+#include <cstdlib>
+#include <time.h>
+#include <math.h>
+#include <cstdlib>
+#include <vector>
+#include <cmath>
+#include <ilcplex/ilocplex.h>
+
+
+using namespace std;
+#define b_min 50 
+#define b_max 200
+#define A_min 1 
+#define A_max 30
+#define z_min 1
+#define z_max 10
+#define N_Infinity -100000000
+
+/*------------------------------------------------------------------------------
+ 
+ -----------------------------Public Variables----------------------------------
+ 
+ -----------------------------------------------------------------------------*/
+int N_Objectives;
+double Sparsity_Matrix;
+double Sparsity_ObjFs;
+int** ObjF;
+int Row_N;
+int Column_N;
+int** Matrix;
+int* RHS;
+int Number_of_NonZeros;
+int* Number_of_NonZeros_In_Each_Row;
+int Counter;
+int save;
+bool done = 0;
+
+/*------------------------------------------------------------------------------
+ 
+ ------------------------Declaring CPLEX information----------------------------
+ 
+ -----------------------------------------------------------------------------*/
+ILOSTLBEGIN
+typedef IloArray<IloNumVarArray> NumVar2DArray;
+IloEnv env;
+IloModel model(env);
+IloObjective cost;
+IloNumVarArray x_con(env);
+IloNumVarArray x_UR_con(env);
+IloExpr Expr(env);
+IloCplex cplex(env);
+
+int main(int argc, char *argv[]) {
+    N_Objectives = atoi(argv[1]);
+    Row_N = atoi(argv[2]);
+    Column_N = atoi(argv[3]);
+    Sparsity_Matrix = atof(argv[4]);
+    Sparsity_ObjFs = atof(argv[5]);
+    srand(time(NULL) + N_Objectives + Row_N + Column_N + atoi(argv[6]));
+    //------------------------------------------------------------------------------
+    ObjF = new int* [N_Objectives];
+    for (int i = 0; i < N_Objectives; i++) {
+        ObjF[i] = new int [Column_N];
+    }
+    for (int i = 0; i < N_Objectives; i++) {
+        for (int j = 0; j < Column_N; j++) {
+            ObjF[i][j] = 0;
+        }
+    }
+
+
+
+    Matrix = new int* [Row_N];
+    for (int i = 0; i < Row_N; i++) {
+        Matrix[i] = new int [Column_N];
+    }
+    for (int i = 0; i < Row_N; i++) {
+        for (int j = 0; j < Column_N; j++) {
+            Matrix[i][j] = N_Infinity;
+        }
+    }
+    RHS = new int [Row_N];
+    /*------------------------------------------------------------------------------
+ 
+     ------------------------------Generating Matrix--------------------------------
+ 
+     -----------------------------------------------------------------------------*/
+    Number_of_NonZeros = Row_N * Column_N*Sparsity_Matrix;
+    Number_of_NonZeros_In_Each_Row = new int [Row_N];
+    for (int i = 0; i < Row_N; i++) {
+        Number_of_NonZeros_In_Each_Row[i] = 1;
+    }
+    Number_of_NonZeros -= Row_N;
+    while (Number_of_NonZeros > 0) {
+        for (int i = 0; i < Row_N; i++) {
+            if (Number_of_NonZeros == 0) {
+                break;
+            }
+            if (Column_N - Number_of_NonZeros_In_Each_Row[i] > 0) {
+                Counter = (fmin(Number_of_NonZeros, Column_N - Number_of_NonZeros_In_Each_Row[i]) / 2) + 1;
+                save = (rand() % Counter + 1);
+                Number_of_NonZeros_In_Each_Row[i] += save;
+                Number_of_NonZeros -= save;
+            }
+        }
+    }
+    //------------Ensuring That Each Row and Each Variable are useful----------- 
+    Counter = 0;
+    for (int i = 0; i < Row_N; i++) {
+        Matrix[i][Counter] = (rand() % (A_max - A_min + 1)) + A_min;
+        Counter++;
+        if (Counter == Column_N) {
+            Counter = 0;
+        }
+        Number_of_NonZeros_In_Each_Row[i]--;
+    }
+    if (Row_N < Column_N) {
+        while (Counter < Column_N) {
+            for (int i = 0; i < Row_N; i++) {
+                if (Counter >= Column_N) {
+                    break;
+                }
+                if (Number_of_NonZeros_In_Each_Row[i] > 0) {
+                    Matrix[i][Counter] = (rand() % (A_max - A_min + 1)) + A_min;
+                    Counter++;
+                    Number_of_NonZeros_In_Each_Row[i]--;
+                }
+            }
+
+        }
+    }
+    //------------------Assigning Values to All Other Elements------------------ 
+    for (int i = 0; i < Row_N; i++) {
+        while (Number_of_NonZeros_In_Each_Row[i] > 0) {
+            save = (rand() % Column_N);
+            done = 0;
+            while (done == 0) {
+                if (save == Column_N) {
+                    save = 0;
+                }
+                if (Matrix[i][save] < N_Infinity + 1) {
+                    Matrix[i][save] = (rand() % (A_max - A_min + 1)) + A_min;
+                    done = 1;
+                } else {
+                    save++;
+                }
+            }
+            Number_of_NonZeros_In_Each_Row[i]--;
+        }
+    }
+    //----------------------change Negative_Infinity to Zero--------------------
+    for (int i = 0; i < Row_N; i++) {
+        for (int j = 0; j < Column_N; j++) {
+            if (Matrix[i][j] < N_Infinity + 1) {
+                Matrix[i][j] = 0;
+            }
+        }
+    }
+    /*------------------------------------------------------------------------------
+ 
+     --------------------------Generating Objectives--------------------------------
+ 
+     -----------------------------------------------------------------------------*/
+    for (int i = 0; i < N_Objectives; i++) {
+        Number_of_NonZeros = fmax(1, Column_N * Sparsity_ObjFs);
+        while (Number_of_NonZeros > 0) {
+            save = (rand() % Column_N);
+            done = 0;
+            while (done == 0) {
+                if (save == Column_N) {
+                    save = 0;
+                }
+                if (ObjF[i][save] == 0) {
+                    ObjF[i][save] = (rand() % (z_max - z_min + 1)) + z_min;
+                    done = 1;
+                } else {
+                    save++;
+                }
+            }
+            Number_of_NonZeros--;
+        }
+    }
+
+    /*------------------------------------------------------------------------------
+ 
+     -----------------------Generating right hand side------------------------------
+ 
+     -----------------------------------------------------------------------------*/
+    for (int i = 0; i < Row_N; i++) {
+        RHS[i] = (rand() % (b_max - b_min + 1)) + b_min;
+    }
+
+    /*--------------------------------------------------------------------------
+ 
+     ------------------------Generating Model for ISA---------------------------
+ 
+   ---------------------------------------------------------------------------*/
+    x_con = IloNumVarArray(env, Column_N, 0.0, +IloInfinity, ILOFLOAT);
+    x_UR_con = IloNumVarArray(env, N_Objectives, 0.0, +IloInfinity, ILOFLOAT);
+    for (int i = 0; i < N_Objectives; i++) {
+        model.add(x_UR_con[i] == 0);
+    }
+
+    for (int i = 0; i < N_Objectives; i++) {
+        Expr.end();
+        {
+            Expr = IloExpr(env);
+            Expr += x_UR_con[i];
+            for (int j = 0; j < Column_N; j++) {
+                Expr -= (ObjF[i][j] * x_con[j]);
+            }
+            model.add(Expr == 0);
+        }
+    }
+    for (int i = 0; i < Row_N; i++) {
+        Expr.end();
+        {
+            Expr = IloExpr(env);
+            for (int j = 0; j < Column_N; j++) {
+                Expr += (Matrix[i][j] * x_con[j]);
+            }
+            model.add(Expr <= RHS[i]);
+        }
+    }
+    cost = IloMaximize(env, x_con[0]);
+    model.add(cost);
+    cplex.extract(model);
+    cplex.exportModel("Instance.lp");
+    /*--------------------------------------------------------------------------
+ 
+    ------------------------Generating Model for AMPL---------------------------
+ 
+    ---------------------------------------------------------------------------*/
+    ofstream Ample_Model;
+    char VarName[1000];
+    Ample_Model.open("AMPL.mod");
+    Ample_Model << endl << endl << endl;
+    /*-----------------------------Defining Variables--------------------------*/
+    for (int i = 0; i < N_Objectives; i++) {
+        sprintf(VarName, "var u%d>=0.000001;", i);
+        Ample_Model << VarName << endl;
+    }
+    for (int i = 0; i < Column_N; i++) {
+        sprintf(VarName, "var x%d>=0;", i);
+        Ample_Model << VarName << endl;
+    }
+    /*------------------------Defining Objective Function----------------------*/
+    Ample_Model << "maximize obj: ";
+    for (int i = 0; i < N_Objectives; i++) {
+        sprintf(VarName, "log(u%d)", i);
+        Ample_Model << VarName;
+        if (i < N_Objectives - 1) {
+            Ample_Model << "+";
+        } else {
+            Ample_Model << ";" << endl;
+        }
+    }
+    /*----------------------------Defining Constraints-------------------------*/
+    bool plus;
+    for (int i = 0; i < N_Objectives; i++) {
+        {
+            sprintf(VarName, "subject to Ycons%d: ", i);
+            Ample_Model << VarName;
+            sprintf(VarName, "u%d=", i);
+            Ample_Model << VarName;
+            plus = 0;
+            for (int j = 0; j < Column_N; j++) {
+                if (ObjF[i][j] != 0) {
+                    if (plus == 1 && ObjF[i][j] >= 0) {
+                        Ample_Model << "+";
+                    }
+                    sprintf(VarName, "%d*", ObjF[i][j]);
+                    Ample_Model << VarName;
+                    sprintf(VarName, "x%d", j);
+                    Ample_Model << VarName;
+                    plus = 1;
+                }
+            }
+            Ample_Model << ";" << endl;
+        }
+    }
+    for (int i = 0; i < Row_N; i++) {
+        sprintf(VarName, "subject to Xcons%d: ", i);
+        Ample_Model << VarName;
+        plus = 0;
+        for (int j = 0; j < Column_N; j++) {
+            if (Matrix[i][j] != 0) {
+                if (plus == 1 && Matrix[i][j] >= 0) {
+                    Ample_Model << "+";
+                }
+                sprintf(VarName, "%d*", Matrix[i][j]);
+                Ample_Model << VarName;
+                sprintf(VarName, "x%d", j);
+                Ample_Model << VarName;
+                plus = 1;
+            }
+        }
+        Ample_Model << "<=" <<RHS[i]<<";"<<endl;
+    }
+    Ample_Model.close();
+
+    return 0;
+}
+

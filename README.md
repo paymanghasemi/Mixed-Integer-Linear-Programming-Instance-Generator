@@ -1,5 +1,5 @@
-# Multi-objective-Mixed-Integer-Linear-Programming-Instances
-Set of solved instances using BOMILP-MMP.cpp
+# Mixed Integer Linear Programming Instance Generator
+Set of solved instances using MIL-MMP.cpp
 # Instances
 We generated instances for three values of p ∈ { 2, 3, 4 } , which refers to
 the number of objective functions in a problem. In each case, we have four sets of instances, namely,

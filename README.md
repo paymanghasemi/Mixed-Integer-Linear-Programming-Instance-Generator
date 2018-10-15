@@ -19,7 +19,7 @@ The instances are written as CPLEX LP file as follows,
 
 ![Images](Images/instance.jpg)
 
-where f(x) is an arbitrary function which can be removed, x1 and x2 are the objective functions respresenting the y1 and y2 of the problem, and the rest of x are the decision variables.
+where the first p x's are the objective functions respresenting the y1, y2,..., and yp of the problem, and the rest of x are the decision variables.
 
 Real, binary, and integer decision variables are distributed randomly in the instances, and therefore, there is no pattern for separating their indexes.
 # Supporting and Citing

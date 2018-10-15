@@ -42,7 +42,9 @@ make
 
 ./Instance_Generator 2 4 5 0.5 0.5 25 25
 
-This code generates an instance with two objectives, four decision variables, five constraints, 0.5 the sparsity of matrix A, 0.5 sparisty of matrix D, 25 percent of the decision variables are continuous, 25 percent of variables are integers. and since the sumation of integers and continuous is not 100, the remaining 50 percent of the variables are binaries.
+This code generates an instance with two objectives, four decision variables, five constraints, 0.5 the sparsity of matrix A, 0.5 sparisty of matrix D, 25 percent of the decision variables are continuous, and 25 percent of variables are integers. and since the sumation of integers and continuous is not 100, the remaining 50 percent of the variables are binaries.
+
+The code generates three files: Original.lp is the original instance, i.e. the integer variables are not converted. 1.lp is the binary form of the instance, and 2.lp is the relaxed form of the 1.lp.
 
 # Supporting and Citing
 

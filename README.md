@@ -22,6 +22,11 @@ The instances are written as CPLEX LP file as follows,
 where the first p x's are the objective functions respresenting the y1, y2,..., and yp of the problem, and the rest of x are the decision variables.
 
 Real, binary, and integer decision variables are distributed randomly in the instances, and therefore, there is no pattern for separating their indexes.
+
+# Files
+
+In each case, there are two folders, 1 and 2. Folder 1 includes the IP problem and folder 2 includes the relaxed problems. In instances with integer variables, a third folder named Original Variables is included that contains the instances in their original shape, i.e. before conversion to binary variables.
+
 # Supporting and Citing
 
 The instances were generated as part of academic research. If you would like to help support it, please star the repository as such metrics may help us secure funding in the future. We would be grateful if you could cite:

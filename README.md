@@ -31,7 +31,7 @@ Compiling the project can be done using the Terminal by going to the directory i
 
 An instance can be solved by typing 
 
-./Instance_Generator <*number of objective*> <*number of decision variables*> <*number of constraints*> <*sparsity of matrix A*> <*sparsity of objective's matrix D*> <*percent of continuous variables*> <*percent of integer variables*>
+./Instance_Generator <*number of objective*> <*number of decision variables*> <*number of constraints*> <*sparsity of matrix A*> <*sparsity of objective's matrix D*> <*percent of continuous variables*> <*percent of integer variables*> <*a random number*>
 
 
 For better understanging, an example code to run is as follows
@@ -40,9 +40,9 @@ make clean
 
 make
 
-./Instance_Generator 2 4 5 0.5 0.5 25 25
+./Instance_Generator 2 4 5 0.5 0.5 25 25 2
 
-This code generates an instance with two objectives, four decision variables, five constraints, 0.5 the sparsity of matrix A, 0.5 sparisty of matrix D, 25 percent of the decision variables are continuous, and 25 percent of variables are integers. and since the sumation of integers and continuous is not 100, the remaining 50 percent of the variables are binaries.
+This code generates an instance with two objectives, four decision variables, five constraints, 0.5 the sparsity of matrix A, 0.5 sparisty of matrix D, 25 percent of the decision variables are continuous, and 25 percent of variables are integers. and since the sumation of integers and continuous is not 100, the remaining 50 percent of the variables are binaries. Note that the random number, which is 2 in this code, guarantees that no two generated instances would be the same. 
 
 The code generates three files: Original.lp is the original instance, i.e. the integer variables are not converted. 1.lp is the binary form of the instance, and 2.lp is the relaxed form of the 1.lp.
 
